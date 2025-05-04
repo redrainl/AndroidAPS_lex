@@ -31,11 +31,17 @@ jobs:
         export keyAlias=${{ secrets.KEY_ALIAS }}
         export keyPassword=${{ secrets.KEY_PASSWORD }}
         export storeFile=${{ secrets.STORE_FILE }}
-        ./gradlew assemble
+        ./gradlew \
+          :app:assembleFullRelease \
+          :app:assembleAapsclientRelease \
+          :wear:assembleFullRelease \
+          :wear:assembleAapsclientRelease 
+                   
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
       with:
         name: aaps
         path: |
-          app/build/outputs/apk/full/release
-          wear/build/outputs/apk/release
+          app/build/outputs/apk/**/release/*.apk
+          wear/build/outputs/apk/**/release/*.apk
+        
