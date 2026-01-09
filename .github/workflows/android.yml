@@ -1,6 +1,22 @@
 name: Android CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      buildVariant:
+        description: 'Select Build Variant'
+        required: true
+        default: 'fullRelease'
+        type: choice
+        options:
+          - fullRelease
+          - fullDebug
+          - aapsclientRelease
+          - aapsclientDebug
+          - aapsclient2Release
+          - aapsclient2Debug
+          - pumpcontrolRelease
+          - pumpcontrolDebug
   push:
     branches: [ "master" ]
   pull_request:
