@@ -1,22 +1,7 @@
 name: Android CI
 
 on:
-  workflow_dispatch:
-    inputs:
-      buildVariant:
-        description: 'Select Build Variant'
-        required: true
-        default: 'fullRelease'
-        type: choice
-        options:
-          - fullRelease
-          - fullDebug
-          - aapsclientRelease
-          - aapsclientDebug
-          - aapsclient2Release
-          - aapsclient2Debug
-          - pumpcontrolRelease
-          - pumpcontrolDebug
+  workflow_dispatch: # 保留手动触发按钮，但不再需要输入
   push:
     branches: [ "master" ]
   pull_request:
@@ -24,11 +9,17 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    
+    # 使用矩阵策略并行编译多个版本
+    strategy:
+      matrix:
+        variant: [fullRelease, aapsclientRelease, pumpcontrolRelease]
+      fail-fast: false # 即使其中一个版本失败，另一个也会继续
 
     steps:
     - uses: actions/checkout@v4
+
     - name: set up JDK 21
       uses: actions/setup-java@v4
       with:
@@ -38,21 +29,28 @@ jobs:
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+
     - name: Build with Gradle
       run: |
+        # 注入签名 Secrets
         export storePassword=${{ secrets.STORE_PASSWORD }}
         export keyAlias=${{ secrets.KEY_ALIAS }}
         export keyPassword=${{ secrets.KEY_PASSWORD }}
         export storeFile=${{ secrets.STORE_FILE }}
-        ./gradlew assembleFullRelease \
+        
+        # 动态根据矩阵中的变量进行编译
+        ./gradlew assemble${{ matrix.variant }} \
         -Dorg.gradle.jvmargs="-Xmx8g -XX:+UseParallelGC -Xss1024m" \
         -Dkotlin.daemon.jvm.options="-Xmx2g" \
         -Dkotlin.compiler.execution.strategy="in-process" \
         -Dorg.gradle.daemon=true \
         -Dorg.gradle.workers.max=8 \
-        -Dorg.gradle.caching=true \
+        -Dorg.gradle.caching=true
+
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: aaps
-        path: app/build/outputs/apk/full/release
+        # 上传时根据版本重命名，避免文件名冲突
+        name: aaps-${{ matrix.variant }}
+        # 使用通配符匹配输出路径，确保能找到对应的 APK
+        path: app/build/outputs/apk/**/release/*.apk
