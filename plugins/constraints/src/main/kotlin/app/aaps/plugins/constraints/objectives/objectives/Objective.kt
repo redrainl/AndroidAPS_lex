@@ -88,7 +88,7 @@ abstract class Objective(
             return this
         }
 
-        open fun shouldBeIgnored(): Boolean = false
+        open fun shouldBeIgnored(): Boolean = true
     }
 
     inner class MinimumDurationTask internal constructor(objective: Objective, private val minimumDuration: Long) : Task(objective, R.string.time_elapsed) {
